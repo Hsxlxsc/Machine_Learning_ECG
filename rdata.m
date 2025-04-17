@@ -23,19 +23,19 @@
 clc; clear all;
 
 %------ SPECIFY DATA ------------------------------------------------------
-%------ ָ�������ļ� -------------------------------------------------------
-PATH= 'C:\Users\admin\Desktop\100'; % ָ�����ݵĴ���·��
-HEADERFILE= '100.hea';      % .hea ��ʽ��ͷ�ļ������ü��±���
-ATRFILE= '100.atr';         % .atr ��ʽ�������ļ������ݸ�ʽΪ��������
-DATAFILE='100.dat';         % .dat ��ʽ��ECG ����
-SAMPLES2READ=1800;          % ָ����Ҫ�����������
-                            % ��.dat�ļ��д洢������ͨ�����ź�:
-                            % ����� 2*SAMPLES2READ ������ 
+%------ 指定数据文件 -------------------------------------------------------
+PATH= 'C:\Users\admin\Desktop\100'; % 指定数据的储存路径
+HEADERFILE= '100.hea';      % .hea 格式，头文件，可用记事本打开
+ATRFILE= '100.atr';         % .atr 格式，属性文件，数据格式为二进制数
+DATAFILE='100.dat';         % .dat 格式，ECG 数据
+SAMPLES2READ=1800;          % 指定需要读入的样本数
+                            % 若.dat文件中存储有两个通道的信号:
+                            % 则读入 2*SAMPLES2READ 个数据 
 
 %------ LOAD HEADER DATA --------------------------------------------------
-%------ ����ͷ�ļ����� -----------------------------------------------------
+%------ 读入头文件数据 -----------------------------------------------------
 %
-% ʾ�����ü��±��򿪵�117.hea �ļ�������
+% 示例：用记事本打开的117.hea 文件的数据
 %
 %      117 2 360 650000
 %      117.dat 212 200 11 1024 839 31170 0 MLII
@@ -44,45 +44,45 @@ SAMPLES2READ=1800;          % ָ����Ҫ�����������
 %      # None
 %
 %-------------------------------------------------------------------------
-fprintf(1,'\\n$> WORKING ON %s ...\n', HEADERFILE); % ��Matlab�����д�����ʾ��ǰ����״̬
+fprintf(1,'\\n$> WORKING ON %s ...\n', HEADERFILE); % 在Matlab命令行窗口提示当前工作状态
 % 
-% ��ע������ fprintf �Ĺ��ܽ���ʽ��������д�뵽ָ���ļ��С�
-% ����ʽ��count = fprintf(fid,format,A,...)
-% ���ַ���'format'�Ŀ����£�������A��ʵ�����ݽ��и�ʽ������д�뵽�ļ�����fid�С��ú���������д�����ݵ��ֽ��� count��
-% fid ��ͨ������ fopen ��õ������ļ���ʶ����fid=1����ʾ��׼��������������Ļ��ʾ����fid=2����ʾ��׼ƫ�
+% 【注】函数 fprintf 的功能将格式化的数据写入到指定文件中。
+% 表达式：count = fprintf(fid,format,A,...)
+% 在字符串'format'的控制下，将矩阵A的实数数据进行格式化，并写入到文件对象fid中。该函数返回所写入数据的字节数 count。
+% fid 是通过函数 fopen 获得的整型文件标识符。fid=1，表示标准输出（即输出到屏幕显示）；fid=2，表示标准偏差。
 %
-signalh= fullfile(PATH, HEADERFILE);    % ͨ������ fullfile ���ͷ�ļ�������·��
-fid1=fopen(signalh,'r');    % ��ͷ�ļ������ʶ��Ϊ fid1 ������Ϊ'r'--��ֻ����
-z= fgetl(fid1);             % ��ȡͷ�ļ��ĵ�һ�����ݣ��ַ�����ʽ
-A= sscanf(z, '%*s %d %d %d',[1,3]); % ���ո�ʽ '%*s %d %d %d' ת�����ݲ�������� A ��
-nosig= A(1);    % �ź�ͨ����Ŀ
-sfreq=A(2);     % ���ݲ���Ƶ��
-clear A;        % ��վ��� A ��׼����ȡ��һ������
-for k=1:nosig           % ��ȡÿ��ͨ���źŵ�������Ϣ
+signalh= fullfile(PATH, HEADERFILE);    % 通过函数 fullfile 获得头文件的完整路径
+fid1=fopen(signalh,'r');    % 打开头文件，其标识符为 fid1 ，属性为'r'--“只读”
+z= fgetl(fid1);             % 读取头文件的第一行数据，字符串格式
+A= sscanf(z, '%*s %d %d %d',[1,3]); % 按照格式 '%*s %d %d %d' 转换数据并存入矩阵 A 中
+nosig= A(1);    % 信号通道数目
+sfreq=A(2);     % 数据采样频率
+clear A;        % 清空矩阵 A ，准备获取下一行数据
+for k=1:nosig           % 读取每个通道信号的数据信息
     z= fgetl(fid1);
     A= sscanf(z, '%*s %d %d %d %d %d',[1,5]);
-    dformat(k)= A(1);           % �źŸ�ʽ; ����ֻ����Ϊ 212 ��ʽ
-    gain(k)= A(2);              % ÿ mV ��������������
-    bitres(k)= A(3);            % �������ȣ�λ�ֱ��ʣ�
-    zerovalue(k)= A(4);         % ECG �ź������Ӧ������ֵ
-    firstvalue(k)= A(5);        % �źŵĵ�һ������ֵ (����ƫ�����)
+    dformat(k)= A(1);           % 信号格式; 这里只允许为 212 格式
+    gain(k)= A(2);              % 每 mV 包含的整数个数
+    bitres(k)= A(3);            % 采样精度（位分辨率）
+    zerovalue(k)= A(4);         % ECG 信号零点相应的整数值
+    firstvalue(k)= A(5);        % 信号的第一个整数值 (用于偏差测试)
 end;
 fclose(fid1);
 clear A;
 
 %------ LOAD BINARY DATA --------------------------------------------------
-%------ ��ȡ ECG �źŶ�ֵ���� ----------------------------------------------
+%------ 读取 ECG 信号二值数据 ----------------------------------------------
 %
 if dformat~= [212,212], error('this script does not apply binary formats different to 212.'); end;
-signald= fullfile(PATH, DATAFILE);            % ���� 212 ��ʽ�� ECG �ź�����
+signald= fullfile(PATH, DATAFILE);            % 读入 212 格式的 ECG 信号数据
 fid2=fopen(signald,'r');
 A= fread(fid2, [3, SAMPLES2READ], 'uint8')';  % matrix with 3 rows, each 8 bits long, = 2*12bit
 fclose(fid2);
-% ͨ��һϵ�е���λ��bitshift����λ�루bitand�����㣬���ź��ɶ�ֵ����ת��Ϊʮ������
-M2H= bitshift(A(:,2), -4);        %�ֽ���������λ����ȡ�ֽڵĸ���λ
-M1H= bitand(A(:,2), 15);          %ȡ�ֽڵĵ���λ
-PRL=bitshift(bitand(A(:,2),8),9);     % sign-bit   ȡ���ֽڵ���λ�����λ�������ƾ�λ
-PRR=bitshift(bitand(A(:,2),128),5);   % sign-bit   ȡ���ֽڸ���λ�����λ����������λ
+% 通过一系列的移位（bitshift）、位与（bitand）运算，将信号由二值数据转换为十进制数
+M2H= bitshift(A(:,2), -4);        %字节向右移四位，即取字节的高四位
+M1H= bitand(A(:,2), 15);          %取字节的低四位
+PRL=bitshift(bitand(A(:,2),8),9);     % sign-bit   取出字节低四位中最高位，向右移九位
+PRR=bitshift(bitand(A(:,2),128),5);   % sign-bit   取出字节高四位中最高位，向右移五位
 M( : , 1)= bitshift(M1H,8)+ A(:,1)-PRL;
 M( : , 2)= bitshift(M2H,8)+ A(:,3)-PRR;
 if M(1,:) ~= firstvalue, error('inconsistency in the first bit values'); end;
